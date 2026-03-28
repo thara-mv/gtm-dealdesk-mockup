@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Revizto Deal Desk Agent</title>
+<link href="https://fonts.googleapis.com/css2?family=Libre+Baskerville:ital,wght@0,400;0,700;1,400&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --white: #ffffff;
+    --border: #e4e2dc;
+    --border2: #d0cdc4;
+    --text: #1a1916;
+    --muted: #8a8680;
+    --faint: #c4c1ba;
+    --accent: #2a5298;
+    --accent-light: #eef2fb;
+    --red: #c0392b;
+    --red-light: #fdf3f2;
+    --red-border: #f0c4c0;
+    --amber: #a05c00;
+    --amber-light: #fdf8f0;
+    --amber-border: #f0ddb8;
+    --green: #1e6b3c;
+    --green-light: #f0f9f4;
+    --green-border: #b8e0c8;
+    --serif: 'Libre Baskerville', Georgia, serif;
+    --sans: 'Inter', system-ui, sans-serif;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 13.5px; line-height: 1.65; min-height: 100vh; }
+  .app { max-width: 880px; margin: 0 auto; padding: 56px 32px 100px; }
+
+  .header { margin-bottom: 40px; }
+  .header-top { display: flex; align-items: flex-start; justify-content: space-between; margin-bottom: 5px; }
+  .brand { font-family: var(--serif); font-size: 22px; font-weight: 700; letter-spacing: -0.02em; }
+  .brand span { color: var(--accent); }
+  .stage-pill { font-size: 11px; font-weight: 500; background: var(--accent-light); color: var(--accent); border: 1px solid #c8d8f5; padding: 4px 12px; border-radius: 20px; margin-top: 4px; white-space: nowrap; }
+  .header-sub { font-size: 13px; color: var(--muted); font-weight: 300; }
+  hr { border: none; border-top: 1px solid var(--border); margin: 0 0 32px; }
+
+  .label { font-size: 10px; font-weight: 500; letter-spacing: 0.1em; text-transform: uppercase; color: var(--faint); margin-bottom: 14px; }
+  .card { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 24px 28px; margin-bottom: 14px; }
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 14px; }
+  @media (max-width: 620px) { .form-grid { grid-template-columns: 1fr; } }
+  .field-block { margin-bottom: 13px; }
+  .field-block:last-child { margin-bottom: 0; }
+  .field-label { display: block; font-size: 11px; font-weight: 500; letter-spacing: 0.05em; text-transform: uppercase; color: var(--muted); margin-bottom: 5px; }
+  input[type="text"], select, textarea { width: 100%; background: var(--bg); border: 1px solid var(--border); border-radius: 7px; color: var(--text); font-family: var(--sans); font-size: 13px; padding: 8px 12px; outline: none; transition: border-color 0.15s; appearance: none; }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); background: var(--white); }
+  textarea { resize: vertical; min-height: 68px; line-height: 1.55; }
+  .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 13px; }
+
+  .analyze-btn { width: 100%; padding: 13px 24px; background: var(--accent); border: none; border-radius: var(--radius); color: #fff; font-family: var(--sans); font-size: 13.5px; font-weight: 500; cursor: pointer; transition: opacity 0.15s; margin-bottom: 24px; }
+  .analyze-btn:hover { opacity: 0.88; }
+  .analyze-btn:disabled { opacity: 0.35; cursor: not-allowed; }
+
+  .loading { display: none; text-align: center; padding: 48px 0; }
+  .loading-dots { display: flex; gap: 7px; justify-content: center; margin-bottom: 14px; }
+  .dot { width: 7px; height: 7px; border-radius: 50%; background: var(--accent); opacity: 0.3; animation: pulse 1.3s ease-in-out infinite; }
+  .dot:nth-child(2) { animation-delay: 0.2s; }
+  .dot:nth-child(3) { animation-delay: 0.4s; }
+  @keyframes pulse { 0%,100% { opacity: 0.25; transform: scale(0.85); } 50% { opacity: 1; transform: scale(1); } }
+  .loading-text { font-size: 12.5px; color: var(--muted); font-weight: 300; }
+
+  .error-box { display: none; background: var(--red-light); border: 1px solid var(--red-border); border-radius: var(--radius); padding: 12px 16px; font-size: 13px; color: var(--red); margin-bottom: 14px; }
+
+  .results { display: none; }
+  .results-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; }
+  .results-title { font-family: var(--serif); font-size: 20px; font-weight: 700; }
+  .risk-badge { font-size: 11px; font-weight: 500; letter-spacing: 0.04em; padding: 4px 14px; border-radius: 20px; }
+  .risk-high { background: var(--red-light); color: var(--red); border: 1px solid var(--red-border); }
+  .risk-medium { background: var(--amber-light); color: var(--amber); border: 1px solid var(--amber-border); }
+  .risk-low { background: var(--green-light); color: var(--green); border: 1px solid var(--green-border); }
+
+  .metrics { display: grid; grid-template-columns: repeat(4, minmax(0,1fr)); gap: 10px; margin-bottom: 14px; }
+  @media (max-width: 560px) { .metrics { grid-template-columns: 1fr 1fr; } }
+  .metric { background: var(--white); border: 1px solid var(--border); border-radius: var(--radius); padding: 16px 18px; }
+  .metric-val { font-family: var(--serif); font-size: 16px; font-weight: 700; letter-spacing: -0.02em; color: var(--text); margin-bottom: 3px; }
+  .metric-val.blue { color: var(--accent); }
+  .metric-val.red { color: var(--red); }
+  .metric-val.amber { color: var(--amber); }
+  .metric-val.green { color: var(--green); }
+  .metric-label { font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.07em; font-weight: 500; }
+
+  .flag { display: flex; gap: 13px; align-items: flex-start; padding: 13px 16px; border-radius: 8px; margin-bottom: 8px; border: 1px solid transparent; }
+  .flag:last-child { margin-bottom: 0; }
+  .flag-err { background: var(--red-light); border-color: var(--red-border); }
+  .flag-warn { background: var(--amber-light); border-color: var(--amber-border); }
+  .flag-ok { background: var(--green-light); border-color: var(--green-border); }
+  .flag-icon { width: 20px; height: 20px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: 700; flex-shrink: 0; margin-top: 1px; }
+  .fi-err { background: var(--red-border); color: var(--red); }
+  .fi-warn { background: var(--amber-border); color: var(--amber); }
+  .fi-ok { background: var(--green-border); color: var(--green); }
+  .flag-title { font-size: 13px; font-weight: 500; margin-bottom: 2px; }
+  .flag-desc { font-size: 12.5px; color: var(--muted); line-height: 1.55; }
+
+  .slack-top { display: flex; align-items: center; gap: 10px; margin-bottom: 14px; }
+  .slack-ico { width: 28px; height: 28px; border-radius: 7px; background: #4A154B; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+  .slack-ch { font-size: 13px; font-weight: 500; }
+  .slack-ts { font-size: 11.5px; color: var(--muted); }
+  .slack-bubble { background: var(--bg); border-radius: 8px; padding: 14px 18px; font-size: 13px; line-height: 1.7; border-left: 3px solid var(--accent); }
+  .slack-bubble.s-high { border-left-color: var(--red); }
+  .slack-bubble.s-medium { border-left-color: var(--amber); }
+  .slack-bubble.s-low { border-left-color: var(--green); }
+  .slack-bubble pre { font-family: var(--sans); white-space: pre-wrap; color: var(--text); }
+  .slack-footer { font-size: 11px; color: var(--faint); margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--border); }
+
+  .reset-btn { background: none; border: 1px solid var(--border2); color: var(--muted); font-family: var(--sans); font-size: 11.5px; padding: 5px 14px; border-radius: 6px; cursor: pointer; transition: color 0.15s; }
+  .reset-btn:hover { color: var(--text); border-color: var(--text); }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="header">
+    <div class="header-top">
+      <div class="brand"><span>Revizto</span> Deal Desk Agent</div>
+      <div class="stage-pill">Proposal Sent</div>
+    </div>
+    <div class="header-sub">AI-powered commercial risk analysis for AEC enterprise deals</div>
+  </div>
+  <hr>
+
+  <div class="form-grid">
+    <div class="card">
+      <div class="label">Deal details</div>
+      <div class="field-block">
+        <label class="field-label">Customer name</label>
+        <input type="text" id="f-customer" value="Turner & Townsend" />
+      </div>
+      <div class="two-col">
+        <div>
+          <label class="field-label">Deal type</label>
+          <select id="f-type"><option>New Logo</option><option>Renewal</option><option>Expansion</option><option>Renewal + Expansion</option></select>
+        </div>
+        <div>
+          <label class="field-label">Segment</label>
+          <select id="f-segment"><option>Enterprise</option><option>Mid-Market</option><option>SMB</option></select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label class="field-label">ACV (€)</label>
+          <input type="text" id="f-acv" value="245000" />
+        </div>
+        <div>
+          <label class="field-label">Contract term</label>
+          <select id="f-term"><option>12 months</option><option>24 months</option><option>36 months</option></select>
+        </div>
+      </div>
+      <div class="two-col">
+        <div>
+          <label class="field-label">Discount %</label>
+          <input type="text" id="f-discount" value="28" />
+        </div>
+        <div>
+          <label class="field-label">Payment terms</label>
+          <select id="f-payment"><option>Annual upfront</option><option>Quarterly</option><option>Monthly</option><option>Annual (yr 1 upfront)</option></select>
+        </div>
+      </div>
+      <div class="two-col" style="margin-bottom:0;">
+        <div>
+          <label class="field-label">Region</label>
+          <input type="text" id="f-region" value="UK & Germany" />
+        </div>
+        <div>
+          <label class="field-label">Start date</label>
+          <input type="text" id="f-start" value="2026-05-01" />
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="label">License & contract</div>
+      <div class="field-block">
+        <label class="field-label">License type</label>
+        <select id="f-license"><option>Enterprise License</option><option>Team License</option><option>Starter License</option></select>
+      </div>
+      <div class="two-col">
+        <div>
+          <label class="field-label">Named seats</label>
+          <input type="text" id="f-seats" value="500" />
+        </div>
+        <div>
+          <label class="field-label">Approval level</label>
+          <select id="f-approval"><option>AE</option><option>VP Sales</option><option>CRO</option><option>CFO</option></select>
+        </div>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Modules</label>
+        <input type="text" id="f-modules" value="BIM Coordination, Issue Tracker, Clash Detection" />
+      </div>
+      <div class="field-block">
+        <label class="field-label">Edition / add-ons</label>
+        <input type="text" id="f-edition" value="MEP + Structural" />
+      </div>
+      <div class="two-col">
+        <div>
+          <label class="field-label">MSA status</label>
+          <select id="f-msa"><option>Executed</option><option>Pending</option><option>Expired</option><option>Under review</option></select>
+        </div>
+        <div>
+          <label class="field-label">Signatory on file</label>
+          <select id="f-signatory"><option>Yes — named</option><option>Missing</option><option>TBC</option></select>
+        </div>
+      </div>
+      <div class="field-block">
+        <label class="field-label">Additional notes</label>
+        <textarea id="f-notes" placeholder="Verbal add-ons, GDPR requirements, side agreements, multi-region complexity..."></textarea>
+      </div>
+    </div>
+  </div>
+
+  <div class="error-box" id="error-box"></div>
+  <button class="analyze-btn" id="analyze-btn" onclick="analyze()">Analyze with Claude</button>
+
+  <div class="loading" id="loading">
+    <div class="loading-dots"><div class="dot"></div><div class="dot"></div><div class="dot"></div></div>
+    <div class="loading-text" id="loading-text">Reviewing deal terms...</div>
+  </div>
+
+  <div class="results" id="results">
+    <div class="results-header">
+      <div class="results-title">Analysis</div>
+      <div style="display:flex;gap:8px;align-items:center;">
+        <div class="risk-badge" id="risk-badge"></div>
+        <button class="reset-btn" onclick="document.getElementById('results').style.display='none'">New deal</button>
+      </div>
+    </div>
+    <div class="metrics" id="metrics"></div>
+    <div class="card" style="margin-bottom:14px;">
+      <div class="label">Commercial flags</div>
+      <div id="flags"></div>
+    </div>
+    <div class="card">
+      <div class="label">Slack alert — #deal-desk</div>
+      <div class="slack-top">
+        <div class="slack-ico">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><rect x="2" y="2" width="5" height="5" rx="1" fill="white" opacity="0.9"/><rect x="9" y="2" width="5" height="5" rx="1" fill="white" opacity="0.6"/><rect x="2" y="9" width="5" height="5" rx="1" fill="white" opacity="0.6"/><rect x="9" y="9" width="5" height="5" rx="1" fill="white" opacity="0.3"/></svg>
+        </div>
+        <div>
+          <div class="slack-ch">#deal-desk</div>
+          <div class="slack-ts">Revizto Deal Desk Bot · just now</div>
+        </div>
+      </div>
+      <div class="slack-bubble" id="slack-bubble"><pre id="slack-text"></pre></div>
+      <div class="slack-footer">Revizto Deal Desk Agent · Powered by Claude · Triggered at Proposal Sent</div>
+    </div>
+  </div>
+</div>
+
+<script>
+const _k = atob('c2stYW50LWFwaTAzLWFVUnZuQjBvblVBX1dqZzUwbWlCWFl3UUNtTzRHRE5OYml5NkNhc3BnV3BGNGRYV09rd2FPbGczYXgtZTJLQVJUdEZHVjM0WGx4Rm5ndXlCdlBSWGV3LXRKQm4zUUFB').trim();
+
+function showError(m) { const e=document.getElementById('error-box'); e.textContent=m; e.style.display='block'; }
+function hideError() { document.getElementById('error-box').style.display='none'; }
+
+function getDeal() {
+  return {
+    customer: document.getElementById('f-customer').value,
+    type: document.getElementById('f-type').value,
+    segment: document.getElementById('f-segment').value,
+    acv: document.getElementById('f-acv').value,
+    term: document.getElementById('f-term').value,
+    discount: document.getElementById('f-discount').value,
+    payment: document.getElementById('f-payment').value,
+    region: document.getElementById('f-region').value,
+    startDate: document.getElementById('f-start').value,
+    license: document.getElementById('f-license').value,
+    seats: document.getElementById('f-seats').value,
+    approval: document.getElementById('f-approval').value,
+    modules: document.getElementById('f-modules').value,
+    edition: document.getElementById('f-edition').value,
+    msa: document.getElementById('f-msa').value,
+    signatory: document.getElementById('f-signatory').value,
+    notes: document.getElementById('f-notes').value
+  };
+}
+
+function buildPrompt(d) {
+  return `You are the Deal Desk AI agent for Revizto, a BIM collaboration SaaS platform for AEC (Architecture, Engineering, Construction) firms. Revizto sells annual subscription licenses tiered by named user seats, with modules including BIM Coordination, Issue Tracker, Clash Detection, Analytics API, and industry editions (MEP, Structural, Fabrication).
+
+A deal has reached "Proposal Sent" stage. Analyze it for commercial risks, ARR implications, and missing information.
+
+DEAL:
+Customer: ${d.customer} | Type: ${d.type} | Segment: ${d.segment}
+ACV: €${d.acv} | Term: ${d.term} | Discount: ${d.discount}%
+Payment: ${d.payment} | Region: ${d.region} | Start: ${d.startDate}
+License: ${d.license} | Seats: ${d.seats} | Approval level on file: ${d.approval}
+Modules: ${d.modules} | Edition: ${d.edition}
+MSA: ${d.msa} | Signatory: ${d.signatory}
+Notes: ${d.notes || 'None'}
+
+APPROVAL THRESHOLDS:
+AE: up to 15% discount, up to €50k ACV
+VP Sales: up to 20% discount, up to €150k ACV
+CRO: 21–30% discount, €150k–€400k ACV
+CFO: above 30% or above €400k ACV
+
+ARR POLICY:
+- ARR only bookable once MSA executed and named signatory confirmed
+- Multi-region EU+UK deals require GDPR data residency confirmation
+- Renewal+Expansion: MSA scope review needed if modules changed since original agreement
+- Quarterly billing on new logos increases churn risk; annual upfront preferred
+- Mid-quarter starts create prorated ARR entries — must flag for FP&A
+
+Reply ONLY with valid JSON, no markdown, no explanation outside the JSON:
+{"riskLevel":"High"|"Medium"|"Low","arrImpact":"string","tcv":"string","flagCount":number,"flags":[{"type":"error"|"warning"|"ok","title":"string","description":"string"}],"slackMessage":"plain text ready to paste into Slack #deal-desk"}`;
+}
+
+async function analyze() {
+  hideError();
+  const deal = getDeal();
+  if (!deal.customer || !deal.acv) { showError('Please fill in customer name and ACV.'); return; }
+  const btn = document.getElementById('analyze-btn');
+  btn.disabled = true;
+  document.getElementById('loading').style.display = 'block';
+  document.getElementById('results').style.display = 'none';
+  const msgs = ['Reviewing deal terms...','Checking discount thresholds...','Running ARR checks...','Reviewing contract completeness...','Drafting Slack alert...'];
+  let i = 0;
+  const tEl = document.getElementById('loading-text');
+  const iv = setInterval(() => { tEl.textContent = msgs[++i % msgs.length]; }, 1500);
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', 'x-api-key': _k.trim(), 'anthropic-version': '2023-06-01', 'anthropic-dangerous-direct-browser-access': 'true' },
+      body: JSON.stringify({ model: 'claude-sonnet-4-20250514', max_tokens: 1500, messages: [{ role: 'user', content: buildPrompt(deal) }] })
+    });
+    clearInterval(iv);
+    if (!res.ok) { const e = await res.json(); throw new Error(e.error?.message || `API error ${res.status}`); }
+    const data = await res.json();
+    const raw = data.content[0].text.trim().replace(/```json|```/g,'').trim();
+    renderResults(JSON.parse(raw));
+  } catch(e) {
+    clearInterval(iv);
+    showError(e.message || 'Something went wrong. Please try again.');
+  } finally {
+    btn.disabled = false;
+    document.getElementById('loading').style.display = 'none';
+  }
+}
+
+function renderResults(d) {
+  const rMap = { High:'risk-high', Medium:'risk-medium', Low:'risk-low' };
+  const rb = document.getElementById('risk-badge');
+  rb.textContent = (d.riskLevel||'Medium') + ' risk';
+  rb.className = 'risk-badge ' + (rMap[d.riskLevel]||'risk-medium');
+  const cMap = { High:'red', Medium:'amber', Low:'green' };
+  const c = cMap[d.riskLevel]||'amber';
+  document.getElementById('metrics').innerHTML = [
+    { val: d.arrImpact||'—', label: 'ARR impact', cls: 'blue' },
+    { val: d.tcv||'—', label: 'TCV', cls: '' },
+    { val: (d.flagCount??d.flags?.length??0)+' flags', label: 'Issues found', cls: (d.flagCount>2?'red':'amber') },
+    { val: d.riskLevel||'—', label: 'Risk level', cls: c }
+  ].map(m=>`<div class="metric"><div class="metric-val ${m.cls}">${m.val}</div><div class="metric-label">${m.label}</div></div>`).join('');
+  const tMap={error:'err',warning:'warn',ok:'ok'}, iMap={error:'✕',warning:'!',ok:'✓'};
+  document.getElementById('flags').innerHTML = (d.flags||[]).map(f=>{
+    const t=tMap[f.type]||'warn';
+    return `<div class="flag flag-${t}"><div class="flag-icon fi-${t}">${iMap[f.type]||'!'}</div><div><div class="flag-title">${f.title}</div><div class="flag-desc">${f.description}</div></div></div>`;
+  }).join('');
+  const sb = document.getElementById('slack-bubble');
+  sb.className = 'slack-bubble s-'+(d.riskLevel||'medium').toLowerCase();
+  document.getElementById('slack-text').textContent = d.slackMessage||'—';
+  document.getElementById('results').style.display = 'block';
+  document.getElementById('results').scrollIntoView({ behavior:'smooth', block:'start' });
+}
+</script>
+</body>
+</html>
